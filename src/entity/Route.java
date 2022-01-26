@@ -4,18 +4,18 @@ import java.io.Serializable;
 
 public class Route implements Serializable {
     private int id;
-    private int distance;
+    private double distance;
     private int totalBusStop;
 
     public Route() {
     }
 
-    public Route(int id, int distance, int totalBusStop) {
+    public Route(int id, double distance, int totalBusStop) {
         this.id = id;
         this.distance = distance;
         this.totalBusStop = totalBusStop;
     }
-    public Route( int distance, int totalBusStop) {
+    public Route( double distance, int totalBusStop) {
         this.distance = distance;
         this.totalBusStop = totalBusStop;
     }
@@ -28,11 +28,11 @@ public class Route implements Serializable {
         this.id = id;
     }
 
-    public int getDistance() {
+    public double getDistance() {
         return distance;
     }
 
-    public void setDistance(int distance) {
+    public void setDistance(float distance) {
         this.distance = distance;
     }
 

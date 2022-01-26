@@ -9,7 +9,7 @@ import java.util.*;
 
 public class RosterDAO implements DataAccessible<Roster,Integer> {
     private File ROSTER_DATA_FILE = new File("RosterData.txt");
-
+    private final String TABLE_NAME= "roster";
     @Override
     public boolean save(Roster roster) {
         boolean checkSave = false;
@@ -100,7 +100,7 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
         }
     }
 
-    public ArrayList<Roster> getAll() {
+    public ArrayList<Roster> findAll() {
         ArrayList<Roster> rosterArrayList = new ArrayList();
         if(ROSTER_DATA_FILE.length()!=0){
             try {
@@ -130,7 +130,7 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
     }
 
     public Roster findById(Integer id) {
-        ArrayList<Roster> rosterArrayList = getAll();
+        ArrayList<Roster> rosterArrayList = findAll();
         Driver driver = new Driver("","","",0,"");
         Route route =new Route(0,0,0);
         int totalRoute=0;

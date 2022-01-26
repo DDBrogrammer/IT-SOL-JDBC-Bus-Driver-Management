@@ -1,4 +1,6 @@
-package helper;
+package utils.validate;
+
+import utils.Helper;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

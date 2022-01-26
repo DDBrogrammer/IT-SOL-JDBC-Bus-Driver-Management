@@ -1,8 +1,8 @@
 package controller;
 
 import entity.Driver;
-import helper.Helper;
-import helper.ValidateDriver;
+import utils.Helper;
+import utils.validate.ValidateDriver;
 import repository.DriverDAO;
 
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ public class DriverController {
         }
     }
     public void printListData(){
-        ArrayList<Driver> driverArrayList= driverDAO.getAll();
+        ArrayList<Driver> driverArrayList= driverDAO.findAll();
         for(Driver d:driverArrayList){
             System.out.println(d.toString());
         }

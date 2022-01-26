@@ -1,7 +1,7 @@
 package controller;
 
 import entity.Route;
-import helper.Helper;
+import utils.Helper;
 import repository.RouteDAO;
 
 import java.util.ArrayList;
@@ -10,9 +10,10 @@ public class RouteController {
     private Helper helper=new Helper();
     private RouteDAO routeDAO=new RouteDAO();
     public void getInputEntity() {
-        int distance,totalBusStop;
+        int totalBusStop;
+        Double distance;
         do {
-            distance= helper.getInt("Nhập độ dài quãng đường (Km) :");
+            distance= helper.getDouble("Nhập độ dài quãng đường (Km) :");
             break;
         } while (true);
 
@@ -37,7 +38,7 @@ public class RouteController {
         }
     }
     public void printListData(){
-        ArrayList<Route> routeArrayList= routeDAO.getAll();
+        ArrayList<Route> routeArrayList= routeDAO.findAll();
         for(Route r:routeArrayList){
             System.out.println(r.toString());
         }

@@ -1,136 +1,121 @@
 package repository;
 import entity.Route;
+import entity.Route;
+import utils.database_connection.OracleDBConnection;
 
 import java.io.*;
+import java.sql.*;
 import java.util.ArrayList;
 
 public class RouteDAO implements DataAccessible<Route,Integer>{
 
-    private File ROUTE_DATA_FILE = new File("RouteData.txt");
+    private final String TABLE_NAME="route";
+    @Override
     public boolean save(Route route) {
-        boolean ok = false;
-        ArrayList<Route> newRouteArrayList = new ArrayList();
-
-        if( ROUTE_DATA_FILE.length()!=0 ) {
-            try {
-                FileInputStream fi = new FileInputStream(ROUTE_DATA_FILE);
-                ObjectInputStream oi = new ObjectInputStream(fi);
-                // Read objects
-                ArrayList<Route> oldRouteArrayList = (ArrayList<Route>) oi.readObject();
-                for (Route oldRoute : oldRouteArrayList) {
-                    newRouteArrayList.add(oldRoute);
-                }
-                oi.close();
-                fi.close();
-                deleteAll();
-                FileOutputStream f = new FileOutputStream(ROUTE_DATA_FILE);
-                ObjectOutputStream o = new ObjectOutputStream(f);
-                route.setId(newRouteArrayList.size()+100);
-                newRouteArrayList.add(route);
-                o.writeObject(newRouteArrayList);
-                o.flush();
-                o.close();
-                ok = true;
-            } catch (EOFException eof) {
-                // end of file reached, do nothing
-            } catch (FileNotFoundException e) {
-                ok = false;
-                System.out.println("File not found");
-            } catch (IOException e) {
-                ok = false;
-                System.out.println(e);
-                System.out.println("Error initializing stream");
-            } finally {
-                return ok;
+        String saveSql = "INSERT INTO " + TABLE_NAME + " ( distance,total_bus_stop) VALUES ( ?, ?)";
+        String updateSql = "UPDATE " + TABLE_NAME + " SET distance=?, total_bus_stop=?  WHERE id=?";
+        boolean checkOk=false;
+        boolean checkExit=false;
+        ArrayList<Route> listDepartment= findAll();
+        for(Route d:listDepartment) {
+            if (d.getId()==route.getId()) {
+                checkExit=true;
             }
-
-        }else {
-            try {
-                FileOutputStream f = new FileOutputStream(ROUTE_DATA_FILE);
-                ObjectOutputStream o = new ObjectOutputStream(f);
-                route.setId(100);
-                newRouteArrayList.add(route);
-                o.writeObject(newRouteArrayList);
-                o.flush();
-                o.close();
-                ok = true;
-
-            } catch (EOFException eof) {
-                // end of file reached, do nothing
-            } catch (FileNotFoundException e) {
-                ok = false;
-                System.out.println("File not found");
-            } catch (IOException e) {
-                ok = false;
-                System.out.println(e);
-                System.out.println("Error initializing stream");
-            } finally {
-                return ok;
-            }
-
         }
-
-    }
-
-    public boolean deleteAll() {
-        boolean ok = false;
-        try {
-            new FileOutputStream(ROUTE_DATA_FILE).close();
-            ok=true;}
-        catch (EOFException eof) {
-            // end of file reached, do nothing
-        } catch (FileNotFoundException e) {
-            ok = false;
-            System.out.println("File not found");
-        } catch (IOException e) {
-            ok = false;
-            System.out.println(e);
-            System.out.println("Error initializing stream");
-        } finally {
-            return ok;
-        }
-    }
-
-    public ArrayList<Route> getAll() {
-        ArrayList<Route> routeArrayList = new ArrayList();
-        if(ROUTE_DATA_FILE.length()!=0){
-            try {
-                FileInputStream fi = new FileInputStream(ROUTE_DATA_FILE);
-                ObjectInputStream oi = new ObjectInputStream(fi);
-                // Read objects
-                ArrayList<Route> fileDriverArrayList = (ArrayList<Route>) oi.readObject();
-                for (Route driver : fileDriverArrayList) {
-                    routeArrayList.add(driver);
+        if(checkExit) {
+            try { Connection conn= OracleDBConnection.getConnection();
+                PreparedStatement statement;
+                statement = conn.prepareStatement(updateSql);
+                statement.setDouble(1, route.getDistance());
+                statement.setInt(2, route.getTotalBusStop());
+                statement.setInt(3, route.getId());
+                int rowsInserted = statement.executeUpdate();
+                if (rowsInserted > 0) {
+                    checkOk=true;
                 }
-                oi.close();
-                fi.close();
-            }
-            catch (FileNotFoundException e) {
-                System.out.println("File not found");
-            } catch (EOFException e) {
-            } catch (IOException e) {
-                System.out.println("Error initializing stream");
-            } catch (ClassNotFoundException e) {
+                conn.close();
+
+            } catch (SQLException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-            } finally {
-                return routeArrayList;
+            }finally{
+                OracleDBConnection.closeConnection();
             }
-
-        }else {return routeArrayList;}
-    }
-
-    public Route findById(Integer id) {
-        ArrayList<Route> routeArrayList = getAll();
-        Route driver = new Route();
-        for (Route d : routeArrayList) {
-            if (d.getId()==id) {
-                driver = d;
-                break;
+        }else {
+            try {Connection conn= OracleDBConnection.getConnection();
+                PreparedStatement statement;
+                statement = conn.prepareStatement(saveSql);
+                statement.setDouble(1, route.getDistance());
+                statement.setInt(2, route.getTotalBusStop());
+                int rowsInserted = statement.executeUpdate();
+                if (rowsInserted > 0) {
+                    checkOk=true;
+                }
+                conn.close();
+            } catch (SQLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }finally{
+                OracleDBConnection.closeConnection();
             }
         }
-        return driver;
 
+        return checkOk;
+    }
+
+    @Override
+    public boolean deleteAll() {
+        return false;
+    }
+
+    @Override
+    public ArrayList<Route> findAll() {
+        Connection conn= OracleDBConnection.getConnection();
+        ArrayList<Route> listRoute=new ArrayList<>();
+        String sql = "SELECT * FROM "+TABLE_NAME ;
+        try {
+            Statement statement;
+            statement = conn.createStatement();
+            ResultSet result = statement.executeQuery(sql);
+            while (result.next()){
+                int id=result.getInt(1);
+                Double distance = result.getDouble(2);
+                int totalBusStop = result.getInt(3);
+                Route route=new Route(id,distance,totalBusStop);
+                listRoute.add(route);
+            }
+            conn.close();
+        } catch ( SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }finally{
+            OracleDBConnection.closeConnection();
+        }
+        return listRoute;
+    }
+
+    @Override
+    public Route findById(Integer id) {
+        Connection conn= OracleDBConnection.getConnection();
+        String sql = "SELECT * FROM "+TABLE_NAME +"WHERE id=?";
+        Route route=new Route(0,0,0);
+        try {
+            PreparedStatement prepStatement= conn.prepareStatement(sql);
+            prepStatement.setInt(1,id);
+            ResultSet resultList=prepStatement.executeQuery();
+            while (resultList.first()){
+                int driverId=resultList.getInt(1);
+                Double distance = resultList.getDouble(2);
+                int totalBusStop = resultList.getInt(3);
+                route=new Route(driverId,distance,totalBusStop);
+
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }finally{
+            OracleDBConnection.closeConnection();
+        }
+        return route;
     }
 
 }

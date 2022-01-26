@@ -3,8 +3,8 @@ package controller;
 import entity.Driver;
 import entity.Roster;
 import entity.Route;
-import helper.Helper;
-import helper.ValidateRoster;
+import utils.Helper;
+import utils.validate.ValidateRoster;
 import repository.DriverDAO;
 import repository.RosterDAO;
 import repository.RouteDAO;
@@ -38,8 +38,8 @@ public class RosterController {
        int numberOfRoute;
        do{
            numberOfRoute=helper.getInt("Nhập số lượng tuyến đường của lái xe");
-           if(numberOfRoute>routeDao.getAll().size()){
-               System.out.println("Vượt quá số lượng tuyếm đường hiện có ("+routeDao.getAll().size()+")");
+           if(numberOfRoute>routeDao.findAll().size()){
+               System.out.println("Vượt quá số lượng tuyếm đường hiện có ("+routeDao.findAll().size()+")");
            }else{
                break;
            }
@@ -72,7 +72,7 @@ public class RosterController {
        rosterDAO.save(roster);
    }
     public void printListData(){
-        ArrayList<Roster> rosterArrayList= rosterDAO.getAll();
+        ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
         for(Roster ros:rosterArrayList){
             System.out.println("                            ");
             System.out.println("Người lái: "+ ros.getDriver().toString());
@@ -95,18 +95,18 @@ public class RosterController {
     }
 
     public void printListSortByDriverName(){
-        ArrayList<Roster> rosterArrayList= rosterDAO.getAll();
+        ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
         Collections.sort(rosterArrayList,new DriverNameComparator());
         printListData(rosterArrayList);
     }
 
     public void printListSortByTotalRoute(){
-        ArrayList<Roster> rosterArrayList= rosterDAO.getAll();
+        ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
         Collections.sort(rosterArrayList,new NumberOfRouteComparator());
         printListData(rosterArrayList);
     }
     public void printListTotalRange(){
-        ArrayList<Roster> rosterArrayList= rosterDAO.getAll();
+        ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
         for(Roster ros:rosterArrayList){
             System.out.println("                            ");
             System.out.println("Người lái: "+ ros.getDriver().toString());
@@ -117,8 +117,8 @@ public class RosterController {
     }
 
 
-    public int getRange(Map<Route,Integer> rosterList ){
-       int total=0;
+    public double getRange(Map<Route,Integer> rosterList ){
+       double total=0;
         for (Map.Entry<Route,Integer> entry :rosterList.entrySet()){
             total=total+entry.getValue()*entry.getKey().getDistance();
         }
