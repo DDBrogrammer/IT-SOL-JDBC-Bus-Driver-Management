@@ -3,7 +3,8 @@ package controller;
 import entity.Driver;
 import entity.Roster;
 import entity.Route;
-import utils.Helper;
+import main.MainRun;
+
 import utils.validate.ValidateRoster;
 import repository.DriverDAO;
 import repository.RosterDAO;
@@ -13,17 +14,14 @@ import java.util.*;
 
 public class RosterController {
     private RosterDAO rosterDAO=new RosterDAO();
-    private Helper helper=new Helper();
-    private DriverController driverController=new DriverController();
-    private RouteController routeController=new RouteController();
     private DriverDAO driverDAO=new DriverDAO();
     private ValidateRoster validateRoster=new ValidateRoster();
     private RouteDAO routeDao=new RouteDAO();
    public void getInputEntity(){
-       driverController.printListData();
+       MainRun.driverController.printListData();
        System.out.println("Chọn lái xe từ danh sách đã cho");
        Driver driver= new Driver("","","",0,"");
-       do{int driverId=helper.getInt("Nhập Id lái xe từ danh sách:");
+       do{int driverId=MainRun.helper.getInt("Nhập Id lái xe từ danh sách:");
            if(
                    driverDAO.findById(driverId).getId()==0
            ){
@@ -34,10 +32,10 @@ public class RosterController {
                break;
            }
        }while(true);
-       routeController.printListData();
+      MainRun.routeController.printListData();
        int numberOfRoute;
        do{
-           numberOfRoute=helper.getInt("Nhập số lượng tuyến đường của lái xe");
+           numberOfRoute=MainRun.helper.getInt("Nhập số lượng tuyến đường của lái xe");
            if(numberOfRoute>routeDao.findAll().size()){
                System.out.println("Vượt quá số lượng tuyếm đường hiện có ("+routeDao.findAll().size()+")");
            }else{
@@ -48,7 +46,7 @@ public class RosterController {
        int routeId,totalRoute;
        for(int i=0;i<numberOfRoute;i++){
            do{
-               routeId=helper.getInt("Nhập id tuyến đường trong danh sách");
+               routeId=MainRun.helper.getInt("Nhập id tuyến đường trong danh sách");
                if(!validateRoster.validateChosenSubject(routeList,routeId) &&
                        routeDao.findById(routeId).getId()!=0){
                    System.out.println("Đã chọn tuyến đường: " + routeDao.findById(routeId));
@@ -59,7 +57,7 @@ public class RosterController {
                }
            }while(true);
            do{
-               totalRoute=helper.getInt("Nhập tổng số lượt:");
+               totalRoute=MainRun.helper.getInt("Nhập tổng số lượt:");
                if(totalRoute<=15 ){
                     routeList.put(routeDao.findById(routeId),totalRoute);
                    break;
@@ -73,17 +71,11 @@ public class RosterController {
    }
     public void printListData(){
         ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
-        for(Roster ros:rosterArrayList){
-            System.out.println("                            ");
-            System.out.println("Người lái: "+ ros.getDriver().toString());
-            for (Map.Entry<Route,Integer> entry : ros.getRouteList().entrySet())
-                System.out.println("Tuyến đường: " + entry.getKey() +
-                        ", Tổng số lượt: " + entry.getValue());
-            System.out.println("                            ");
-        }
+       printInputListData(rosterArrayList);
     }
 
-    public void printListData(ArrayList<Roster> rosterArrayList){
+    public void printInputListData(ArrayList<Roster> rosterArrayList){
+       if(!rosterArrayList.isEmpty()){
         for(Roster ros:rosterArrayList){
             System.out.println("                            ");
             System.out.println("Người lái: "+ ros.getDriver().toString());
@@ -92,19 +84,20 @@ public class RosterController {
                         ", Tổng số lượt: " + entry.getValue());
             System.out.println("                            ");
         }
-    }
+    }}
 
     public void printListSortByDriverName(){
         ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
-        Collections.sort(rosterArrayList,new DriverNameComparator());
-        printListData(rosterArrayList);
+        rosterArrayList.sort(new DriverNameComparator());
+        printInputListData(rosterArrayList);
     }
 
     public void printListSortByTotalRoute(){
         ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
-        Collections.sort(rosterArrayList,new NumberOfRouteComparator());
-        printListData(rosterArrayList);
+        rosterArrayList.sort(new NumberOfRouteComparator());
+        printInputListData(rosterArrayList);
     }
+
     public void printListTotalRange(){
         ArrayList<Roster> rosterArrayList= rosterDAO.findAll();
         for(Roster ros:rosterArrayList){
@@ -116,13 +109,60 @@ public class RosterController {
 
     }
 
-
     public double getRange(Map<Route,Integer> rosterList ){
        double total=0;
         for (Map.Entry<Route,Integer> entry :rosterList.entrySet()){
             total=total+entry.getValue()*entry.getKey().getDistance();
         }
         return total;
+    }
+
+    public boolean sortRosterManage(){
+        int chose_4;
+        boolean run=false;
+        do {
+            chose_4 =MainRun.helper.getInt("Nhập lựa chọn:\n"
+                    + "[1] sắp xếp danh sách theo tên lái xe.\n"
+                    + "[2] sắp xếp danh sách theo số lượng tuyến trong ngày.\n"
+                    + "[3] Quay lại.\n"
+            );
+            if(chose_4>=1 && chose_4<=3){
+                break;
+            }
+            System.out.println("Bạn phải nhập số nguyên từ 1 đến 3");
+        } while(true);
+        if(chose_4==1){
+            printListSortByDriverName();
+            run=true;
+        }else if(chose_4==2){
+            printListSortByTotalRoute();
+            run=true;
+        }
+        return run;
+    }
+
+    public boolean rosterManage() {
+        int chose_3;
+        boolean run=false;
+        do {
+            chose_3 = MainRun.helper.getInt("Nhập lựa chọn:\n"
+                    + "[1] Thêm bản ghi phân công.\n"
+                    + "[2] Xem danh sách phân công.\n"
+                    + "[3] Quay lại.\n"
+            );
+            if(chose_3>=1 && chose_3<=3){
+                break;
+            }
+            System.out.println("Bạn phải nhập số nguyên từ 1 đến 3");
+        } while(true);
+        if(chose_3==1){
+            getInputEntity();
+            run=true;
+        }else if(chose_3==2){
+            printListData();
+            run=true;
+        }
+        return run;
     }
 }
 class DriverNameComparator implements Comparator<Roster> {
@@ -144,11 +184,6 @@ class NumberOfRouteComparator implements Comparator<Roster> {
     // override the compare() method
     public int compare(Roster r1, Roster r2)
     {
-        if (r1.getRouteList().size()==r2.getRouteList().size())
-            return 0;
-        else if (r1.getRouteList().size()<r2.getRouteList().size())
-            return 1;
-        else
-            return -1;
+        return Integer.compare(r2.getRouteList().size(), r1.getRouteList().size());
     }
 }

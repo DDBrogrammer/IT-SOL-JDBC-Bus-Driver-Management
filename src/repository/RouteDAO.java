@@ -79,7 +79,7 @@ public class RouteDAO implements DataAccessible<Route,Integer>{
             ResultSet result = statement.executeQuery(sql);
             while (result.next()){
                 int id=result.getInt(1);
-                Double distance = result.getDouble(2);
+                double distance = result.getDouble(2);
                 int totalBusStop = result.getInt(3);
                 Route route=new Route(id,distance,totalBusStop);
                 listRoute.add(route);
@@ -97,13 +97,13 @@ public class RouteDAO implements DataAccessible<Route,Integer>{
     @Override
     public Route findById(Integer id) {
         Connection conn= OracleDBConnection.getConnection();
-        String sql = "SELECT * FROM "+TABLE_NAME +"WHERE id=?";
+        String sql = "SELECT * FROM "+TABLE_NAME +" WHERE id=?";
         Route route=new Route(0,0,0);
         try {
             PreparedStatement prepStatement= conn.prepareStatement(sql);
             prepStatement.setInt(1,id);
             ResultSet resultList=prepStatement.executeQuery();
-            while (resultList.first()){
+            while (resultList.next()){
                 int driverId=resultList.getInt(1);
                 Double distance = resultList.getDouble(2);
                 int totalBusStop = resultList.getInt(3);

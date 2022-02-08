@@ -1,5 +1,7 @@
 package utils;
 
+import main.MainRun;
+
 import java.util.Scanner;
 
 public class Helper {
@@ -24,15 +26,11 @@ public class Helper {
         return str;
     }
     public boolean checkContainLetterOnly(String str){
-        return ((!str.equals(""))
-                && (str != null)
-                && (!str.matches(SPECIAL_CHAR_AND_NUMBER_REGEX)));
+        return !str.equals("") && !str.matches(SPECIAL_CHAR_AND_NUMBER_REGEX);
     }
 
     public boolean checkContainLetterAndNumberOnly(String str){
-        return ((!str.equals(""))
-                && (str != null)
-                && (!str.matches(SPECIAL_CHAR_REGEX)));
+        return !str.equals("") && !str.matches(SPECIAL_CHAR_REGEX);
     }
     static String getConvertString(String str){
         boolean check=true;
@@ -94,11 +92,15 @@ public class Helper {
         }
         return s;
     }
-
+    public void askContinue() {
+        if (!askYesNo()) {
+            MainRun.run = false;
+        }
+    }
     public  Double getDouble(String ask) {
         boolean run=true;
         Double d=0.0;
-        while(run==true) {try {
+        while(run) {try {
             Scanner sc = new Scanner(System.in);
             System.out.println(ask);
             d = sc.nextDouble();
@@ -116,7 +118,7 @@ public class Helper {
         boolean ok=false;
         boolean runAgain=true;
         String ans="";
-        while(runAgain==true) {
+        while(runAgain) {
             try {
                 ans = getString("Bạn có muốn dùng tiếp chức năng khác không \n" +
                         "[C]  có\n" +

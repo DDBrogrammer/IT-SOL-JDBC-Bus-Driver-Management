@@ -32,7 +32,7 @@ public class Route implements Serializable {
         return distance;
     }
 
-    public void setDistance(float distance) {
+    public void setDistance(double distance) {
         this.distance = distance;
     }
 

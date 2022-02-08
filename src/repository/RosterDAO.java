@@ -1,15 +1,21 @@
 package repository;
 
+import com.sun.javafx.collections.MappingChange;
 import entity.Driver;
 import entity.Roster;
 import entity.Route;
+import main.MainRun;
+import utils.database_connection.OracleDBConnection;
 
 import java.io.*;
+import java.sql.*;
 import java.util.*;
 
 public class RosterDAO implements DataAccessible<Roster,Integer> {
     private File ROSTER_DATA_FILE = new File("RosterData.txt");
     private final String TABLE_NAME= "roster";
+    private DriverDAO driverDAO=new DriverDAO();
+    private RouteDAO routeDAO=new RouteDAO();
     @Override
     public boolean save(Roster roster) {
         boolean checkSave = false;
@@ -74,11 +80,9 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
                 checkSave = false;
                 System.out.println(e);
                 System.out.println("Error initializing stream");
-            } finally {
-                return checkSave;
             }
-
         }
+        return checkSave;
     }
 
     public boolean deleteAll() {
@@ -101,33 +105,71 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
     }
 
     public ArrayList<Roster> findAll() {
-        ArrayList<Roster> rosterArrayList = new ArrayList();
-        if(ROSTER_DATA_FILE.length()!=0){
-            try {
-                FileInputStream fi = new FileInputStream(ROSTER_DATA_FILE);
-                ObjectInputStream oi = new ObjectInputStream(fi);
-                // Read objects
-                ArrayList<Roster> fileRosterArrayList = (ArrayList<Roster>) oi.readObject();
-                for (Roster roster : fileRosterArrayList) {
+        int tempId=-1,totalRoute=0;boolean checkFist=true;
+        Route route=new Route(0,0.0,0);
+        ArrayList<Driver> driverArrayList=getDriverList();
+        ArrayList<Roster> rosterArrayList=new ArrayList<Roster>();
+        Connection conn= OracleDBConnection.getConnection();
+        String sql = "SELECT * FROM "+TABLE_NAME+" where driver_id= ?" ;
+
+        try {
+            for(Driver d:driverArrayList){
+                Map<Route,Integer> routeList=new HashMap<Route,Integer>();
+                PreparedStatement prepStatement= conn.prepareStatement(sql);
+                prepStatement.setInt(1,d.getId());
+                ResultSet result=prepStatement.executeQuery();
+                int driverId=0,routeId=0;
+                while (result.next() ){
+                    driverId=result.getInt(1);
+                    routeId=result.getInt(2);
+                    totalRoute=result.getInt(3);
+                    route.setId(routeId);
+                    routeList.put(route,totalRoute);
+                    Roster roster=new Roster(d,routeList);
                     rosterArrayList.add(roster);
                 }
-                oi.close();
-                fi.close();
             }
-            catch (FileNotFoundException e) {
-                System.out.println("File not found");
-            } catch (EOFException e) {
-            } catch (IOException e) {
-                System.out.println("Error initializing stream");
-            } catch (ClassNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } finally {
-                return rosterArrayList;
-            }
-
-        }else {return rosterArrayList;}
+        } catch ( SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }finally{
+            OracleDBConnection.closeConnection();
+        }
+        for(Roster ros:rosterArrayList){
+             for(Route r:ros.getRouteList().keySet()){
+                 r.setDistance( routeDAO.findById(r.getId()).getDistance());
+                 r.setTotalBusStop(routeDAO.findById(r.getId()).getTotalBusStop());
+             }
+        }
+     return rosterArrayList ;
     }
+
+  public ArrayList<Driver> getDriverList(){
+      Connection conn= OracleDBConnection.getConnection();
+      ArrayList<Driver> driverArrayList=new ArrayList<Driver>();
+      ArrayList<Integer> driverIdList=new ArrayList<Integer>();
+      String sql = "SELECT DISTINCT DRIVER_ID FROM "+TABLE_NAME ;
+      try {
+          Statement statement;
+          statement = conn.createStatement();
+          ResultSet result = statement.executeQuery(sql);
+          while (result.next()){
+              int id=result.getInt(1);
+              driverIdList.add(id);
+          }
+          conn.close();
+      } catch ( SQLException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+      }finally{
+          OracleDBConnection.closeConnection();
+      }
+      for(int i:driverIdList){
+          driverArrayList.add(driverDAO.findById(i));
+      }
+      return driverArrayList;
+    }
+
 
     public Roster findById(Integer id) {
         ArrayList<Roster> rosterArrayList = findAll();
@@ -148,3 +190,4 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
     }
 
 }
+

@@ -103,13 +103,13 @@ public class DriverDAO implements DataAccessible<Driver,Integer> {
     @Override
     public Driver findById(Integer id) {
         Connection conn= OracleDBConnection.getConnection();
-        String sql = "SELECT * FROM "+TABLE_NAME +"WHERE id=?";
+        String sql = "SELECT * FROM "+TABLE_NAME +" WHERE id=?";
         Driver driver=new Driver("","","",0,"");
         try {
             PreparedStatement prepStatement= conn.prepareStatement(sql);
             prepStatement.setInt(1,id);
             ResultSet resultList=prepStatement.executeQuery();
-            while (resultList.first()){
+            while (resultList.next()){
                 int driverId=resultList.getInt(1);
                 String name = resultList.getString(2);
                 String address = resultList.getString(3);

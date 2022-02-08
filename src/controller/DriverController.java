@@ -1,6 +1,7 @@
 package controller;
 
 import entity.Driver;
+import main.MainRun;
 import utils.Helper;
 import utils.validate.ValidateDriver;
 import repository.DriverDAO;
@@ -15,31 +16,19 @@ public class DriverController {
     public void getInputEntity() {
         String name, address,phone, skillLevel ;
         do {
-            name= helper.getString("Nhập tên lái xe:");
-            if (validateDriver.validateName(name)) {
-                break;
-            }
-        } while (true);
+            name = helper.getString("Nhập tên lái xe:");
+        } while (!validateDriver.validateName(name));
 
         do {
             address = helper.getString("Nhập địa chỉ lái xe: ");
-            if (validateDriver.validateAddress(address)) {
-                break;
-            }
-        } while (true);
+        } while (!validateDriver.validateAddress(address));
 
-        do{ phone= helper.getString("Nhập số điện thoại lái xe: ");
-            if(validateDriver.validatePhone(phone)){
-                break;
-            }
-        }
-        while(true);
-        do{ skillLevel= helper.getString("Nhập trình độ lái xe:");
-            if(validateDriver.validateSkillLevel(skillLevel)){
-                break;
-            }
-        }
-        while(true);
+        do {
+            phone = helper.getString("Nhập số điện thoại lái xe: ");
+        } while (!validateDriver.validatePhone(phone));
+        do {
+            skillLevel = helper.getString("Nhập trình độ lái xe:");
+        } while (!validateDriver.validateSkillLevel(skillLevel));
         Driver newStudent = new Driver(helper.getNormalizedString(name),helper.getNormalizedString(address),phone,skillLevel.toUpperCase(Locale.ROOT));
         if(driverDAO.save(newStudent)){
             System.out.println("Thêm lái xe mới thành công");
@@ -59,5 +48,28 @@ public class DriverController {
         for(Driver d:driverArrayList){
             System.out.println(d.toString());
         }
+    }
+    public boolean driverManage() {
+        int chose_1;
+        boolean run=false;
+        do {
+            chose_1 = MainRun.helper.getInt("Nhập lựa chọn:\n"
+                    + "[1] Thêm người lái.\n"
+                    + "[2] Xem danh sách người lái.\n"
+                    + "[3] Quay lại.\n"
+            );
+            if(chose_1>=1 && chose_1<=3){
+                break;
+            }
+            System.out.println("Bạn phải nhập số nguyên từ 1 đến 3");
+        } while(true);
+        if(chose_1==1){
+            getInputListEntity();
+            run= true;
+        }else if(chose_1==2){
+            printListData();
+            run=true;
+        }
+        return run;
     }
 }
