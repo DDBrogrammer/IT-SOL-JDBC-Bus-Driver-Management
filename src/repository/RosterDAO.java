@@ -18,71 +18,63 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
     private RouteDAO routeDAO=new RouteDAO();
     @Override
     public boolean save(Roster roster) {
-        boolean checkSave = false;
-        ArrayList<Roster> newRosterArrayList = new ArrayList();
-        int driverId=roster.getDriver().getId();
-        if( ROSTER_DATA_FILE.length()!=0 ) {
-            try {
-                FileInputStream fi = new FileInputStream(ROSTER_DATA_FILE);
-                ObjectInputStream oi = new ObjectInputStream(fi);
-                // Read objects
-                ArrayList<Roster> fileRosterArrayList = (ArrayList<Roster>) oi.readObject();
-                /*System.out.println("run");*/
-                if(findById(driverId).getDriver().getId()==roster.getDriver().getId()){
-                   /* System.out.println("Run-2");*/
-                    for(Roster ros:fileRosterArrayList){
-                        if(ros.getDriver().getId()==roster.getDriver().getId()){
-                            ros.setRouteList(roster.getRouteList());
-                            ros.setDriver(roster.getDriver());
-                        }
-                    }
-                }else {
-                   /* System.out.println("Run-3");*/
-                    fileRosterArrayList.add(roster);
-                }
-                oi.close();
-                fi.close();
-                deleteAll();
-                FileOutputStream f = new FileOutputStream(ROSTER_DATA_FILE);
-                ObjectOutputStream o = new ObjectOutputStream(f);
-                o.writeObject(fileRosterArrayList);
-                o.flush();
-                o.close();
-                checkSave = true;
-            } catch (EOFException eof) {
-                // end of file reached, do nothing
-            } catch (FileNotFoundException e) {
-                checkSave = false;
-                System.out.println("File not found");
-            } catch (IOException e) {
-                checkSave = false;
-                System.out.println(e);
-                System.out.println("Error initializing stream");
-            } finally {
-                return checkSave;
-            }
-
-        }else {
-            try {
-                FileOutputStream f = new FileOutputStream(ROSTER_DATA_FILE);
-                ObjectOutputStream o = new ObjectOutputStream(f);
-                newRosterArrayList.add(roster);
-                o.writeObject(newRosterArrayList);
-                o.flush();
-                o.close();
-                checkSave= true;
-            } catch (EOFException eof) {
-                // end of file reached, do nothing
-            } catch (FileNotFoundException e) {
-                checkSave = false;
-                System.out.println("File not found");
-            } catch (IOException e) {
-                checkSave = false;
-                System.out.println(e);
-                System.out.println("Error initializing stream");
+        String saveSql = "INSERT INTO " + TABLE_NAME + " ( driver_id,route_id,total_route) VALUES ( ?, ?,?)";
+        String updateSql = "UPDATE " + TABLE_NAME + " SET total_route  WHERE driver_id=? and route_id=?";
+        boolean checkOk=false;
+        boolean checkExit=false;
+        int rowsInserted=0;
+        ArrayList<Roster> listRoster= findAll();
+        for(Roster ros:listRoster) {
+            if (ros.getDriver().getId()==roster.getDriver().getId()) {
+                checkExit=true;
             }
         }
-        return checkSave;
+        
+        if(checkExit) {
+            try { 
+                Connection conn= OracleDBConnection.getConnection();
+                PreparedStatement statement;
+                statement = conn.prepareStatement(updateSql);
+                for (Map.Entry<Route,Integer> entry : roster.getRouteList().entrySet()){
+                    statement.setInt(1, entry.getValue());
+                    statement.setInt(2, entry.getKey().getId());
+                    statement.setInt(3,roster.getDriver().getId());
+                     rowsInserted = statement.executeUpdate();
+                }
+                if (rowsInserted > 0) {
+                    checkOk=true;
+                }
+                conn.close();
+            } catch (SQLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }finally{
+                OracleDBConnection.closeConnection();
+            }
+        }else {
+            try {
+                Connection conn= OracleDBConnection.getConnection();
+                PreparedStatement statement;
+                statement = conn.prepareStatement(saveSql);
+                for (Map.Entry<Route,Integer> entry : roster.getRouteList().entrySet()){
+                    statement.setInt(1, roster.getDriver().getId());
+                    statement.setInt(2, entry.getKey().getId());
+                    statement.setInt(3, entry.getValue());
+                    rowsInserted = statement.executeUpdate();
+                }
+                if (rowsInserted > 0) {
+                    checkOk=true;
+                }
+                conn.close();
+            } catch (SQLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }finally{
+                OracleDBConnection.closeConnection();
+            }
+        }
+
+        return checkOk;
     }
 
     public boolean deleteAll() {
@@ -105,29 +97,28 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
     }
 
     public ArrayList<Roster> findAll() {
-        int tempId=-1,totalRoute=0;boolean checkFist=true;
-        Route route=new Route(0,0.0,0);
+
         ArrayList<Driver> driverArrayList=getDriverList();
         ArrayList<Roster> rosterArrayList=new ArrayList<Roster>();
         Connection conn= OracleDBConnection.getConnection();
         String sql = "SELECT * FROM "+TABLE_NAME+" where driver_id= ?" ;
-
+        int driverId=0,routeId=0;
         try {
+
             for(Driver d:driverArrayList){
                 Map<Route,Integer> routeList=new HashMap<Route,Integer>();
                 PreparedStatement prepStatement= conn.prepareStatement(sql);
                 prepStatement.setInt(1,d.getId());
                 ResultSet result=prepStatement.executeQuery();
-                int driverId=0,routeId=0;
                 while (result.next() ){
-                    driverId=result.getInt(1);
                     routeId=result.getInt(2);
-                    totalRoute=result.getInt(3);
-                    route.setId(routeId);
+                    int totalRoute=result.getInt(3);
+                    Route route=new Route(routeId,0.0,0);
                     routeList.put(route,totalRoute);
-                    Roster roster=new Roster(d,routeList);
-                    rosterArrayList.add(roster);
+                    System.out.println("so phan tu: "+routeList.size());
                 }
+                Roster roster=new Roster(d,routeList);
+                rosterArrayList.add(roster);
             }
         } catch ( SQLException e) {
             // TODO Auto-generated catch block
@@ -144,7 +135,7 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
      return rosterArrayList ;
     }
 
-  public ArrayList<Driver> getDriverList(){
+     public ArrayList<Driver> getDriverList(){
       Connection conn= OracleDBConnection.getConnection();
       ArrayList<Driver> driverArrayList=new ArrayList<Driver>();
       ArrayList<Integer> driverIdList=new ArrayList<Integer>();
@@ -170,7 +161,6 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
       return driverArrayList;
     }
 
-
     public Roster findById(Integer id) {
         ArrayList<Roster> rosterArrayList = findAll();
         Driver driver = new Driver("","","",0,"");
@@ -186,7 +176,6 @@ public class RosterDAO implements DataAccessible<Roster,Integer> {
             }
         }
         return roster;
-
     }
 
 }
